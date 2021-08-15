@@ -26,9 +26,4 @@ class AppController extends GetxController {
   void onInit() {
     super.onInit();
   }
-
-  late final cameras;
-  loadCamera() async {
-    cameras = await availableCameras();
-  }
 }

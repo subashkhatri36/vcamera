@@ -9,6 +9,7 @@ class SplashView extends GetView<SplashController> {
   @override
   Widget build(BuildContext context) {
     controller.loadpage();
+
     return Scaffold(
       body: Column(
         children: [

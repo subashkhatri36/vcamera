@@ -1,0 +1,5 @@
+enum ImageType{
+  Image,
+  Video
+}
+

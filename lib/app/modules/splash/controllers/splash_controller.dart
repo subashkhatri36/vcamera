@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:get/get.dart';
-import 'package:vcamera/app/constant/controller.dart';
 import 'package:vcamera/app/modules/home/bindings/home_binding.dart';
 import 'package:vcamera/app/modules/home/views/home_view.dart';
 
@@ -12,7 +11,6 @@ class SplashController extends GetxController {
   }
 
   void loadpage() {
-    appController.loadCamera();
     Timer(Duration(seconds: 1), navigation);
   }
 
