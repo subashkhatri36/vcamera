@@ -1,6 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:vcamera/app/constant/controller.dart';
+import 'package:vcamera/app/modules/home/widget/demo.dart';
+import 'package:vcamera/app/modules/home/widget/maincamera.dart';
 
+///It is the collection of menus that show in home page.
+///It takes three argunments
+///[IconnData] as iconData for icon of menu
+///String as title for the title of menu
+///int value for the postition of menu
 class MenuItems extends StatelessWidget {
   final IconData iconData;
   final String title;
@@ -48,9 +56,9 @@ class MenuItems extends StatelessWidget {
   getPressed(int v) {
     switch (v) {
       case 1:
-        return hcontroller.openCamera();
+        return Get.to(() => MainCamera());
       case 2:
-        return hcontroller.openVideo();
+        return Get.to(CameraExampleHome());
       case 3:
         return hcontroller.openGallery();
       case 4:

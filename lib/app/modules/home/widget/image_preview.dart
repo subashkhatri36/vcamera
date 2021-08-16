@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:vcamera/app/constant/controller.dart';
 import 'package:vcamera/app/constant/enums.dart';
 import 'package:vcamera/app/widget/buttons/custom_button.dart';
 
@@ -17,7 +18,11 @@ class ImagePreview extends StatelessWidget {
         ? Container(
             child: Column(
               children: [
-                Expanded(flex: 9, child: Image.file(file)),
+                Expanded(
+                    flex: 9,
+                    child: Image.file(
+                      File(hcontroller.imagePath),
+                    )),
                 Expanded(
                   flex: 1,
                   child: Row(

@@ -15,20 +15,22 @@ class HomeView extends GetView<HomeController> {
             child: Column(
       children: [
         Expanded(
-          flex: 5,
+          flex: appController.islandscape.value ? 3 : 5,
           child: Image.asset(AppImage.icon),
         ),
         Expanded(
-            flex: 3,
+            flex: appController.islandscape.value ? 6 : 3,
             child: Padding(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: Constants.kDefaultPadding / 2),
+              padding: appController.islandscape.isTrue
+                  ? EdgeInsets.symmetric(horizontal: appController.swidth * .2)
+                  : EdgeInsets.symmetric(
+                      horizontal: Constants.kDefaultPadding / 2),
               child: GridView.count(
                 physics: NeverScrollableScrollPhysics(),
                 shrinkWrap: true,
                 crossAxisSpacing: 2,
                 crossAxisCount: 4,
-                mainAxisSpacing: Constants.kDefaultPadding / 2,
+                mainAxisSpacing: Constants.kDefaultPadding / 10,
                 children: controller.menuList.toList(),
               ),
             )),
@@ -40,44 +42,3 @@ class HomeView extends GetView<HomeController> {
     )));
   }
 }
-
-// class PickImage extends StatefulWidget {
-//   const PickImage({Key? key}) : super(key: key);
-
-//   @override
-//   _PickImageState createState() => _PickImageState();
-// }
-
-// class _PickImageState extends State<PickImage> {
-//   Widget displayImage() {
-//     if (imgFile == null) {
-//       return Text("No Image Selected!");
-//     } else {
-//       return Image.file(imgFile!, width: 350, height: 350);
-//     }
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: Text('hello'),
-//       ),
-//       body: Center(
-//         child: Column(
-//           mainAxisAlignment: MainAxisAlignment.center,
-//           children: [
-//             displayImage(),
-//             SizedBox(height: 30),
-//             RaisedButton(
-//               onPressed: () {
-//                 showOptionsDialog(context);
-//               },
-//               child: Text("Select Image"),
-//             )
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
