@@ -7,7 +7,6 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'dart:ui' as ui;
-import 'package:vcamera/app/modules/home/widget/maincamera.dart';
 import 'package:vcamera/app/modules/home/widget/menu_items.dart';
 
 class HomeController extends GetxController {

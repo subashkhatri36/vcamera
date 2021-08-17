@@ -1,6 +1,8 @@
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:vcamera/app/constant/controller.dart';
+import 'package:vcamera/app/modules/home/widget/camera_pageview.dart';
 import 'package:vcamera/app/modules/home/widget/demo.dart';
 import 'package:vcamera/app/modules/home/widget/maincamera.dart';
 
@@ -56,7 +58,7 @@ class MenuItems extends StatelessWidget {
   getPressed(int v) {
     switch (v) {
       case 1:
-        return Get.to(() => MainCamera());
+        return Get.to(() => CameraPageView());
       case 2:
         return Get.to(CameraExampleHome());
       case 3:

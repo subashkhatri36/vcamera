@@ -4,7 +4,6 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:get/get.dart';
-import 'package:vcamera/app/constant/constant.dart';
 import 'package:vcamera/app/constant/controller.dart';
 import 'package:vcamera/app/constant/enums.dart';
 import 'package:vcamera/app/constant/theme_data.dart';
@@ -416,8 +415,7 @@ class _MainCameraState extends State<MainCamera> with WidgetsBindingObserver {
         setState(() {
           hcontroller.imagePath = filePath;
         });
-        if (filePath != null)
-          customSnackbar(title: "", message: 'Picture saved to $filePath');
+        customSnackbar(title: "", message: 'Picture saved to $filePath');
       }
     });
   }
