@@ -1,3 +1,5 @@
+import 'package:vcamera/app/utlis/filters.dart';
+
 const String APP_NAME = "Vcamera";
 
 class Constants {
@@ -10,4 +12,17 @@ class Strings {}
 
 class AppImage {
   static const icon = "assets/images/icon.png";
+  static const fliterImage = "assets/images/showimage.jpg";
 }
+
+final List<List<double>> filters = [
+  SEPIA_MATRIX,
+  GREYSCALE_MATRIX,
+  VINTAGE_MATRIX,
+  SWEET_MATRIX,
+  SEPIEM_MATRIX,
+  CLOUD_MATRIX,
+  CYAN_MATRIX,
+  YELLOW_MATRIX,
+  PRURPLE_MATRIX
+];

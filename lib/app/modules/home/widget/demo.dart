@@ -200,6 +200,10 @@ class _CameraExampleHomeState extends State<CameraExampleHome>
     if (controller == null || _pointers != 2) {
       return;
     }
+    print('mini ' +
+        _minAvailableZoom.toString() +
+        ' max ' +
+        _maxAvailableZoom.toString());
 
     _currentScale = (_baseScale * details.scale)
         .clamp(_minAvailableZoom, _maxAvailableZoom);
