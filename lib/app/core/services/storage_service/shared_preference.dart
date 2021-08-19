@@ -12,10 +12,23 @@ class SharedPref {
     return data ?? "";
   }
 
+  /// read from storage
+  Future<List<String>> readList(String key) async {
+    final prefs = await SharedPreferences.getInstance();
+    List<String>? data = prefs.getStringList(key);
+    return data ?? [];
+  }
+
   /// save to storage
   save(String key, value) async {
     final prefs = await SharedPreferences.getInstance();
     prefs.setString(key, jsonEncode(value));
+  }
+
+  /// save to storage
+  savelist(String key, valuelist) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.setStringList(key, valuelist);
   }
 
   /// read from storage

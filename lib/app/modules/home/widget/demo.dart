@@ -38,27 +38,27 @@ class _CameraExampleHomeState extends State<CameraExampleHome>
   // Counting pointers (number of user fingers on screen)
   int _pointers = 0;
 
-  Future<void> setCameras() async {
-    cameras = await availableCameras();
-    hcontroller.controller =
-        CameraController(cameras[0], ResolutionPreset.medium);
-    hcontroller.controller.initialize().then((_) {
-      hcontroller.initializeControllerFuture =
-          hcontroller.controller.initialize();
-      if (!mounted) {
-        return;
-      }
-      hcontroller.isCameraInitialized = true;
-      //imagePath='';
-      setState(() {});
-    });
-  }
+  // Future<void> setCameras() async {
+  //   cameras = await availableCameras();
+  //   hcontroller.controller =
+  //       CameraController(cameras[0], ResolutionPreset.medium);
+  //   hcontroller.controller.initialize().then((_) {
+  //     hcontroller.initializeControllerFuture =
+  //         hcontroller.controller.initialize();
+  //     if (!mounted) {
+  //       return;
+  //     }
+  //     hcontroller.isCameraInitialized = true;
+  //     //imagePath='';
+  //     setState(() {});
+  //   });
+  // }
 
   @override
   void initState() {
     super.initState();
     _ambiguate(WidgetsBinding.instance)?.addObserver(this);
-    setCameras();
+    // setCameras();
 
     _flashModeControlRowAnimationController = AnimationController(
       duration: const Duration(milliseconds: 300),

@@ -10,6 +10,11 @@ class Constants {
 
 class Strings {}
 
+class AssetLink {
+  static const dogModelUnquanty = 'assets/ml/model_unquant.tflite';
+  static const doglabel = 'assets/ml/labels.txt';
+}
+
 class AppImage {
   static const icon = "assets/images/icon.png";
   static const fliterImage = "assets/images/showimage.jpg";

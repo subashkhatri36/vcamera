@@ -1,13 +1,14 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:vcamera/app/constant/constant.dart';
 import 'package:vcamera/app/constant/controller.dart';
 import 'package:vcamera/app/constant/enums.dart';
 import 'package:vcamera/app/constant/theme_data.dart';
 import 'package:vcamera/app/modules/home/widget/image_preview.dart';
+import 'package:vcamera/app/modules/home/widget/save_gallary.dart';
 import 'package:vcamera/app/widget/custom_snackbar.dart';
 
 ///This widget help to view camera and shoot photo
@@ -22,83 +23,45 @@ class _CameraPageViewState extends State<CameraPageView>
     with WidgetsBindingObserver, TickerProviderStateMixin {
   final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
 
-  ///camera controller
-  CameraController? controller;
-
-  Future<void>? initializeControllerFuture;
-
-  List<CameraDescription> cameras = [];
-
-  bool isCameraInitialized = false;
-
-//file to sore image
-  XFile? imageFile;
-
-  ///Exposure setting
-  double minAvailableExposureOffSet = 0.0;
-  double maxAvailableExposureOffset = 0.0;
-  double currentExposureOffset = 0.0;
-
-//working for flash
-  late AnimationController flashModeControlRowAnimationController;
-  late Animation<double> flashModeControlRowAnimation;
-//exposure animation
-  late AnimationController exposureModeControlRowAnimationController;
-  late Animation<double> exposureModeControlRowAnimation;
-//foused mode animation
-  late AnimationController focusModeControlRowAnimationController;
-  late Animation<double> focusModeControlRowAnimation;
-
-  // bool enableAudio = false;
-
-//zoom size
-  double minAvailableZoom = 1.0;
-  double maxAvailablezoom = 1.0;
-  double currentScale = 1.0;
-  double baseScale = 1.0;
-
-  String timestamp() => DateTime.now().millisecondsSinceEpoch.toString();
-
-  ///counting pointers(number of user fingers on screen)
-  int pointers = 0;
   @override
   void initState() {
     ambiguate(WidgetsBinding.instance)?.addObserver(this);
     setCameras();
     animationInitalized();
+
     super.initState();
   }
 
-  void animationInitalized() {
-    flashModeControlRowAnimationController = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 300));
-    flashModeControlRowAnimation = CurvedAnimation(
-        parent: flashModeControlRowAnimationController,
-        curve: Curves.easeInCubic);
-
-    exposureModeControlRowAnimationController =
-        AnimationController(vsync: this, duration: Duration(milliseconds: 300));
-    exposureModeControlRowAnimation = CurvedAnimation(
-        parent: exposureModeControlRowAnimationController,
-        curve: Curves.easeInCubic);
-
-    focusModeControlRowAnimationController =
-        AnimationController(vsync: this, duration: Duration(milliseconds: 300));
-    focusModeControlRowAnimation = CurvedAnimation(
-        parent: focusModeControlRowAnimationController,
-        curve: Curves.easeInCubic);
+  Future<void> setCameras() async {
+    hcontroller.cameras = await availableCameras();
+    onNewCameraSelected(hcontroller.cameras[0]);
   }
 
-  Future<void> setCameras() async {
-    cameras = await availableCameras();
-    onNewCameraSelected(cameras[0]);
+  void animationInitalized() {
+    hcontroller.flashModeControlRowAnimationController = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 300));
+    hcontroller.flashModeControlRowAnimation = CurvedAnimation(
+        parent: hcontroller.flashModeControlRowAnimationController,
+        curve: Curves.easeInCubic);
+
+    hcontroller.exposureModeControlRowAnimationController =
+        AnimationController(vsync: this, duration: Duration(milliseconds: 300));
+    hcontroller.exposureModeControlRowAnimation = CurvedAnimation(
+        parent: hcontroller.exposureModeControlRowAnimationController,
+        curve: Curves.easeInCubic);
+
+    hcontroller.focusModeControlRowAnimationController =
+        AnimationController(vsync: this, duration: Duration(milliseconds: 300));
+    hcontroller.focusModeControlRowAnimation = CurvedAnimation(
+        parent: hcontroller.focusModeControlRowAnimationController,
+        curve: Curves.easeInCubic);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       key: scaffoldKey,
-      body: controller == null
+      body: hcontroller.controller == null
           ? Center(child: CircularProgressIndicator())
           : Stack(
               children: [
@@ -125,20 +88,30 @@ class _CameraPageViewState extends State<CameraPageView>
                     ),
                   ),
                 ),
-                if (imageFile != null)
+                if (hcontroller.imageFile != null)
                   Positioned(
                     top: appController.sheight * .05,
                     right: appController.swidth * .03,
                     child: SizedBox(
                       width: 100.0,
                       height: 100.0,
-                      child: InkWell(
-                          onTap: () {
-                            Get.to(ImagePreview(
-                                imagetype: ImageType.Image,
-                                file: imageFile!.path));
-                          },
-                          child: Image.file(File(imageFile!.path))),
+                      child: hcontroller.imageFile == null
+                          ? appController.imagesFiles.isNotEmpty
+                              ? InkWell(
+                                  onTap: () {
+                                    Get.to(SavedGallary());
+                                  },
+                                  child: Image.memory(
+                                      appController.imagesFiles[0]))
+                              : Container()
+                          : InkWell(
+                              onTap: () {
+                                Get.to(ImagePreview(
+                                    imagetype: ImageType.Image,
+                                    file: hcontroller.imageFile!.path));
+                              },
+                              child: Image.file(
+                                  File(hcontroller.imageFile!.path))),
                     ),
                   ),
 
@@ -161,31 +134,38 @@ class _CameraPageViewState extends State<CameraPageView>
                                 IconButton(
                                   icon: Icon(Icons.exposure),
                                   color: Themes.WHITE,
-                                  onPressed: onExposureModeButtonPressed,
+                                  onPressed:
+                                      hcontroller.onExposureModeButtonPressed,
                                 ),
                                 IconButton(
                                   color: Themes.WHITE,
                                   icon: Icon(
-                                    controller!.value.flashMode == FlashMode.off
+                                    hcontroller.controller!.value.flashMode ==
+                                            FlashMode.off
                                         ? Icons.flash_off
-                                        : controller!.value.flashMode ==
+                                        : hcontroller.controller!.value
+                                                    .flashMode ==
                                                 FlashMode.auto
                                             ? Icons.flash_auto
-                                            : controller!.value.flashMode ==
+                                            : hcontroller.controller!.value
+                                                        .flashMode ==
                                                     FlashMode.always
                                                 ? Icons.flash_on
-                                                : controller!.value.flashMode ==
+                                                : hcontroller.controller!.value
+                                                            .flashMode ==
                                                         FlashMode.torch
                                                     ? Icons.highlight
                                                     : Icons.flash_on_outlined,
                                     size: (appController.sheight * 0.045),
                                   ),
-                                  onPressed: onFlashModeButtonPressed,
+                                  onPressed:
+                                      hcontroller.onFlashModeButtonPressed,
                                 ),
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(100),
                                   child: GestureDetector(
-                                    onTap: controller!.value.isInitialized
+                                    onTap: hcontroller
+                                            .controller!.value.isInitialized
                                         ? onTakePictureButtonPressed
                                         : null,
                                     child: Container(
@@ -224,8 +204,8 @@ class _CameraPageViewState extends State<CameraPageView>
                                           });
                                 }),
                                 IconButton(
-                                  icon: Icon(controller!
-                                          .value.isCaptureOrientationLocked
+                                  icon: Icon(hcontroller.controller!.value
+                                          .isCaptureOrientationLocked
                                       ? Icons.screen_lock_rotation
                                       : Icons.screen_rotation),
                                   color: Themes.WHITE,
@@ -244,23 +224,24 @@ class _CameraPageViewState extends State<CameraPageView>
   }
 
   void toggleCamera([int index = 0]) async {
-    controller = CameraController(
-      cameras[index],
+    hcontroller.controller = CameraController(
+      hcontroller.cameras[index],
       ResolutionPreset.medium,
     );
 
     // If the controller is updated then update the UI.
-    controller!.addListener(() {
+    hcontroller.controller!.addListener(() {
       if (mounted) setState(() {});
-      if (controller!.value.hasError) {
+      if (hcontroller.controller!.value.hasError) {
         customSnackbar(
             title: "",
-            message: 'Camera error ${controller!.value.errorDescription}');
+            message:
+                'Camera error ${hcontroller.controller!.value.errorDescription}');
       }
     });
 
     try {
-      await controller!.initialize();
+      await hcontroller.controller!.initialize();
     } on CameraException catch (e) {
       print(e);
     }
@@ -272,11 +253,11 @@ class _CameraPageViewState extends State<CameraPageView>
 
   void onCaptureOrientationLockButtonPressed() async {
     // final CameraController cameraController = controller;
-    if (controller!.value.isCaptureOrientationLocked) {
-      await controller!.unlockCaptureOrientation();
+    if (hcontroller.controller!.value.isCaptureOrientationLocked) {
+      await hcontroller.controller!.unlockCaptureOrientation();
       // customSnackbar(message: 'Capture orientation unlocked');
     } else {
-      await controller!.lockCaptureOrientation();
+      await hcontroller.controller!.lockCaptureOrientation();
       // customSnackbar(
       //     message:
       //         'Capture orientation locked to ${controller.value.lockedCaptureOrientation.toString().split('.').last}');
@@ -284,20 +265,28 @@ class _CameraPageViewState extends State<CameraPageView>
     setState(() {});
   }
 
+  void onSetExposureModeButtonPressed(ExposureMode mode) {
+    setExposureMode(mode).then((_) {
+      if (mounted) setState(() {});
+      // customSnackbar(
+      //     message: 'Exposure mode set to ${mode.toString().split('.').last}');
+    });
+  }
+
   Widget exposureModeControlRowWidget() {
     final ButtonStyle styleAuto = TextButton.styleFrom(
-      primary: controller!.value.exposureMode == ExposureMode.auto
+      primary: hcontroller.controller!.value.exposureMode == ExposureMode.auto
           ? Colors.orange
           : Themes.WHITE,
     );
     final ButtonStyle styleLocked = TextButton.styleFrom(
-      primary: controller!.value.exposureMode == ExposureMode.locked
+      primary: hcontroller.controller!.value.exposureMode == ExposureMode.locked
           ? Colors.orange
           : Themes.WHITE,
     );
 
     return SizeTransition(
-      sizeFactor: exposureModeControlRowAnimation,
+      sizeFactor: hcontroller.exposureModeControlRowAnimation,
       child: ClipRect(
         child: Container(
           child: Column(
@@ -309,13 +298,13 @@ class _CameraPageViewState extends State<CameraPageView>
                   TextButton(
                     child: Text('AUTO'),
                     style: styleAuto,
-                    onPressed: controller != null
+                    onPressed: hcontroller.controller != null
                         ? () =>
                             onSetExposureModeButtonPressed(ExposureMode.auto)
                         : null,
                     onLongPress: () {
-                      if (controller != null) {
-                        controller!.setExposurePoint(null);
+                      if (hcontroller.controller != null) {
+                        hcontroller.controller!.setExposurePoint(null);
                         //customSnackbar(message: 'Resetting exposure point');
                       }
                     },
@@ -323,7 +312,7 @@ class _CameraPageViewState extends State<CameraPageView>
                   TextButton(
                     child: Text('LOCKED'),
                     style: styleLocked,
-                    onPressed: controller != null
+                    onPressed: hcontroller.controller != null
                         ? () =>
                             onSetExposureModeButtonPressed(ExposureMode.locked)
                         : null,
@@ -341,23 +330,23 @@ class _CameraPageViewState extends State<CameraPageView>
                 mainAxisSize: MainAxisSize.max,
                 children: [
                   Text(
-                    minAvailableExposureOffSet.toString(),
+                    hcontroller.minAvailableExposureOffSet.toString(),
                     style: TextStyle(color: Themes.WHITE),
                   ),
                   Slider(
                     activeColor: Themes.Orange,
                     inactiveColor: Themes.WHITE,
-                    value: currentExposureOffset,
-                    min: minAvailableExposureOffSet,
-                    max: maxAvailableExposureOffset,
-                    label: currentExposureOffset.toString(),
-                    onChanged:
-                        minAvailableExposureOffSet == maxAvailableExposureOffset
-                            ? null
-                            : setExposureOffset,
+                    value: hcontroller.currentExposureOffset,
+                    min: hcontroller.minAvailableExposureOffSet,
+                    max: hcontroller.maxAvailableExposureOffset,
+                    label: hcontroller.currentExposureOffset.toString(),
+                    onChanged: hcontroller.minAvailableExposureOffSet ==
+                            hcontroller.maxAvailableExposureOffset
+                        ? null
+                        : setExposureOffset,
                   ),
                   Text(
-                    maxAvailableExposureOffset.toString(),
+                    hcontroller.maxAvailableExposureOffset.toString(),
                     style: TextStyle(color: Themes.WHITE),
                   ),
                 ],
@@ -369,17 +358,9 @@ class _CameraPageViewState extends State<CameraPageView>
     );
   }
 
-  void onSetExposureModeButtonPressed(ExposureMode mode) {
-    setExposureMode(mode).then((_) {
-      if (mounted) setState(() {});
-      // customSnackbar(
-      //     message: 'Exposure mode set to ${mode.toString().split('.').last}');
-    });
-  }
-
   Future<void> setExposureMode(ExposureMode mode) async {
     try {
-      await controller!.setExposureMode(mode);
+      await hcontroller.controller!.setExposureMode(mode);
     } on CameraException catch (e) {
       print(e);
       rethrow;
@@ -388,66 +369,47 @@ class _CameraPageViewState extends State<CameraPageView>
 
   Future<void> setExposureOffset(double offset) async {
     setState(() {
-      currentExposureOffset = offset;
+      hcontroller.currentExposureOffset = offset;
     });
     try {
-      offset = await controller!.setExposureOffset(offset);
+      offset = await hcontroller.controller!.setExposureOffset(offset);
     } on CameraException catch (e) {
       print(e);
       rethrow;
     }
   }
 
-  void onFlashModeButtonPressed() {
-    if (flashModeControlRowAnimationController.value == 1) {
-      flashModeControlRowAnimationController.reverse();
-    } else {
-      flashModeControlRowAnimationController.forward();
-      exposureModeControlRowAnimationController.reverse();
-    }
-  }
-
-  void onExposureModeButtonPressed() {
-    if (exposureModeControlRowAnimationController.value == 1) {
-      exposureModeControlRowAnimationController.reverse();
-    } else {
-      exposureModeControlRowAnimationController.forward();
-      flashModeControlRowAnimationController.reverse();
-      // _focusModeControlRowAnimationController.reverse();
-    }
-  }
-
   Widget flashModeControlRowWidget() {
     return SizeTransition(
-      sizeFactor: flashModeControlRowAnimation,
+      sizeFactor: hcontroller.flashModeControlRowAnimation,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         mainAxisSize: MainAxisSize.max,
         children: [
           IconButton(
             icon: Icon(Icons.flash_off),
-            color: controller!.value.flashMode == FlashMode.off
+            color: hcontroller.controller!.value.flashMode == FlashMode.off
                 ? Colors.orange
                 : Themes.WHITE,
             onPressed: () => onSetFlashModeButtonPressed(FlashMode.off),
           ),
           IconButton(
             icon: Icon(Icons.flash_auto),
-            color: controller!.value.flashMode == FlashMode.auto
+            color: hcontroller.controller!.value.flashMode == FlashMode.auto
                 ? Colors.orange
                 : Themes.WHITE,
             onPressed: () => onSetFlashModeButtonPressed(FlashMode.auto),
           ),
           IconButton(
             icon: Icon(Icons.flash_on),
-            color: controller!.value.flashMode == FlashMode.always
+            color: hcontroller.controller!.value.flashMode == FlashMode.always
                 ? Colors.orange
                 : Themes.WHITE,
             onPressed: () => onSetFlashModeButtonPressed(FlashMode.always),
           ),
           IconButton(
             icon: Icon(Icons.highlight),
-            color: controller!.value.flashMode == FlashMode.torch
+            color: hcontroller.controller!.value.flashMode == FlashMode.torch
                 ? Colors.orange
                 : Themes.WHITE,
             onPressed: () => onSetFlashModeButtonPressed(FlashMode.torch),
@@ -458,63 +420,17 @@ class _CameraPageViewState extends State<CameraPageView>
   }
 
   void onSetFlashModeButtonPressed(FlashMode mode) {
-    setFlashMode(mode).then((_) {
+    hcontroller.setFlashMode(mode).then((_) {
       if (mounted) setState(() {});
       // customSnackbar(
       //     message: 'Flash mode set to ${mode.toString().split('.').last}');
     });
   }
 
-  Future<void> setFlashMode(FlashMode mode) async {
-    if (controller == null) {
-      return;
-    }
-    try {
-      await controller!.setFlashMode(mode);
-    } on CameraException catch (e) {
-      print(e);
-      customSnackbar(
-          message: 'Cannot Appicable', snackPosition: SnackPosition.TOP);
-      //rethrow;
-    }
-  }
-
-  Widget cameraPreviewWidget() {
-    final CameraController? cameraController = controller;
-
-    if (cameraController == null || !cameraController.value.isInitialized) {
-      return const Text(
-        'Tap a camera',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 24.0,
-          fontWeight: FontWeight.w900,
-        ),
-      );
-    } else {
-      return Listener(
-        onPointerDown: (_) => pointers++,
-        onPointerUp: (_) => pointers--,
-        child: CameraPreview(
-          controller!,
-          child: LayoutBuilder(
-              builder: (BuildContext context, BoxConstraints constraints) {
-            return GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onScaleStart: handleScaleStart,
-              onScaleUpdate: handleScaleUpdate,
-              onTapDown: (details) => onViewFinderTap(details, constraints),
-            );
-          }),
-        ),
-      );
-    }
-  }
-
   void onViewFinderTap(TapDownDetails details, BoxConstraints constraints) {
-    if (controller == null) return;
+    if (hcontroller.controller == null) return;
 
-    final CameraController cameraController = controller!;
+    final CameraController cameraController = hcontroller.controller!;
     final offset = Offset(
       details.localPosition.dx / constraints.maxWidth,
       details.localPosition.dy / constraints.maxHeight,
@@ -524,26 +440,26 @@ class _CameraPageViewState extends State<CameraPageView>
   }
 
   void handleScaleStart(ScaleStartDetails details) {
-    baseScale = currentScale;
+    hcontroller.baseScale = hcontroller.currentScale;
   }
 
   Future<void> handleScaleUpdate(ScaleUpdateDetails details) async {
     // When there are not exactly two fingers on screen don't scale
-    if (controller == null || pointers != 2) {
+    if (hcontroller.controller == null || hcontroller.pointers != 2) {
       return;
     }
 
-    currentScale =
-        (baseScale * details.scale).clamp(minAvailableZoom, maxAvailablezoom);
+    hcontroller.currentScale = (hcontroller.baseScale * details.scale)
+        .clamp(hcontroller.minAvailableZoom, hcontroller.maxAvailablezoom);
 
-    await controller!.setZoomLevel(currentScale);
+    await hcontroller.controller!.setZoomLevel(hcontroller.currentScale);
   }
 
   void onTakePictureButtonPressed() {
     takePicture().then((XFile? file) {
       if (mounted) {
         setState(() {
-          imageFile = file;
+          hcontroller.imageFile = file;
         });
         // if (file != null)
         //   customSnackbar(message: 'Picture saved to ${file.path}');
@@ -558,26 +474,13 @@ class _CameraPageViewState extends State<CameraPageView>
     // });
   }
 
-  Future<void> setFocusMode(FocusMode mode) async {
-    if (controller == null) {
-      return;
-    }
-
-    try {
-      await controller!.setFocusMode(mode);
-    } on CameraException catch (e) {
-      print(e);
-      rethrow;
-    }
-  }
-
   Future<XFile?> takePicture() async {
-    if (controller!.value.isTakingPicture) {
+    if (hcontroller.controller!.value.isTakingPicture) {
       // A capture is already pending, do nothing.
       return null;
     }
     try {
-      XFile file = await controller!.takePicture();
+      XFile file = await hcontroller.controller!.takePicture();
       return file;
     } on CameraException catch (e) {
       print(e);
@@ -585,12 +488,44 @@ class _CameraPageViewState extends State<CameraPageView>
     }
   }
 
+  Widget cameraPreviewWidget() {
+    final CameraController? cameraController = hcontroller.controller;
+
+    if (cameraController == null || !cameraController.value.isInitialized) {
+      return const Text(
+        'Tap a camera',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 24.0,
+          fontWeight: FontWeight.w900,
+        ),
+      );
+    } else {
+      return Listener(
+        onPointerDown: (_) => hcontroller.pointers++,
+        onPointerUp: (_) => hcontroller.pointers--,
+        child: CameraPreview(
+          hcontroller.controller!,
+          child: LayoutBuilder(
+              builder: (BuildContext context, BoxConstraints constraints) {
+            return GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onScaleStart: handleScaleStart,
+              onScaleUpdate: handleScaleUpdate,
+              onTapDown: (details) => onViewFinderTap(details, constraints),
+            );
+          }),
+        ),
+      );
+    }
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.inactive) {
-      controller!.dispose();
+      hcontroller.controller!.dispose();
     } else if (state == AppLifecycleState.resumed) {
-      onNewCameraSelected(controller!.description);
+      onNewCameraSelected(hcontroller.controller!.description);
     }
 
     super.didChangeAppLifecycleState(state);
@@ -598,13 +533,13 @@ class _CameraPageViewState extends State<CameraPageView>
 
   //either in rotate or in other
   void onNewCameraSelected(CameraDescription cameraDescription) async {
-    isCameraInitialized = false;
+    hcontroller.isCameraInitialized = false;
 
     final CameraController cameraController =
         CameraController(cameraDescription, ResolutionPreset.medium,
             // enableAudio: enableAudio,
             imageFormatGroup: ImageFormatGroup.jpeg);
-    controller = cameraController;
+    hcontroller.controller = cameraController;
     cameraController.addListener(() {
       if (mounted) setState(() {});
       if (cameraController.value.hasError) {
@@ -619,16 +554,16 @@ class _CameraPageViewState extends State<CameraPageView>
       await Future.wait([
         cameraController
             .getMinExposureOffset()
-            .then((value) => minAvailableExposureOffSet = value),
+            .then((value) => hcontroller.minAvailableExposureOffSet = value),
         cameraController
             .getMaxExposureOffset()
-            .then((value) => maxAvailableExposureOffset = value),
+            .then((value) => hcontroller.maxAvailableExposureOffset = value),
         cameraController
             .getMaxZoomLevel()
-            .then((value) => maxAvailablezoom = value),
+            .then((value) => hcontroller.maxAvailablezoom = value),
         cameraController
             .getMinZoomLevel()
-            .then((value) => minAvailableZoom = value),
+            .then((value) => hcontroller.minAvailableZoom = value),
       ]);
       onSetFocusModeButtonPressed();
     } on CameraException catch (e) {
@@ -642,8 +577,8 @@ class _CameraPageViewState extends State<CameraPageView>
   @override
   void dispose() {
     ambiguate(WidgetsBinding.instance)?.removeObserver(this);
-    flashModeControlRowAnimationController.dispose();
-    exposureModeControlRowAnimationController.dispose();
+    hcontroller.flashModeControlRowAnimationController.dispose();
+    hcontroller.exposureModeControlRowAnimationController.dispose();
 
     super.dispose();
   }

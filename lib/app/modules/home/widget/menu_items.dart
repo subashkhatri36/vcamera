@@ -1,10 +1,8 @@
-import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:vcamera/app/constant/controller.dart';
 import 'package:vcamera/app/modules/home/widget/camera_pageview.dart';
 import 'package:vcamera/app/modules/home/widget/demo.dart';
-import 'package:vcamera/app/modules/home/widget/maincamera.dart';
 
 ///It is the collection of menus that show in home page.
 ///It takes three argunments

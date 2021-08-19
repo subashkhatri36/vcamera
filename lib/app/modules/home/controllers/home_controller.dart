@@ -1,23 +1,54 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:image_gallery_saver/image_gallery_saver.dart';
-import 'dart:ui' as ui;
+import 'package:vcamera/app/modules/home/widget/cat_dog_reco_widget.dart';
 import 'package:vcamera/app/modules/home/widget/menu_items.dart';
+import 'package:vcamera/app/modules/home/widget/save_gallary.dart';
+import 'package:vcamera/app/widget/custom_snackbar.dart';
 
 class HomeController extends GetxController {
   static HomeController homecontroller = Get.find();
 
-  late CameraController controller;
-  String imagePath = '';
-  late Future<void> initializeControllerFuture;
+  ///camera controller
+  CameraController? controller;
+
+  Future<void>? initializeControllerFuture;
+
+  List<CameraDescription> cameras = [];
+
   bool isCameraInitialized = false;
 
-  void logError(String code, String message) =>
-      print('Error: $code\nError Message: $message');
+//file to sore image
+  XFile? imageFile;
+
+  ///Exposure setting
+  double minAvailableExposureOffSet = 0.0;
+  double maxAvailableExposureOffset = 0.0;
+  double currentExposureOffset = 0.0;
+
+//working for flash
+  late AnimationController flashModeControlRowAnimationController;
+  late Animation<double> flashModeControlRowAnimation;
+//exposure animation
+  late AnimationController exposureModeControlRowAnimationController;
+  late Animation<double> exposureModeControlRowAnimation;
+//foused mode animation
+  late AnimationController focusModeControlRowAnimationController;
+  late Animation<double> focusModeControlRowAnimation;
+
+  // bool enableAudio = false;
+
+//zoom size
+  double minAvailableZoom = 1.0;
+  double maxAvailablezoom = 1.0;
+  double currentScale = 1.0;
+  double baseScale = 1.0;
+
+  String timestamp() => DateTime.now().millisecondsSinceEpoch.toString();
+
+  ///counting pointers(number of user fingers on screen)
+  int pointers = 0;
 
   ///Its the list of the menu Items that will be show in homescreen
   List<Widget> menuList = [
@@ -62,65 +93,81 @@ class HomeController extends GetxController {
       value: 7,
     ),
   ];
-
-  RxBool isFlashOn = false.obs;
   RxBool isFrontCamera = false.obs;
-  final icons = [
-    Icon(
-      Icons.car_rental,
-      size: 50,
-    ),
-    Icon(
-      Icons.car_repair,
-      size: 50,
-    ),
-    Icon(
-      Icons.card_membership,
-      size: 50,
-    ),
-    Icon(
-      Icons.bus_alert,
-      size: 50,
-    ),
-    Icon(
-      Icons.alternate_email,
-      size: 50,
-    ),
-  ];
 
   @override
   void onInit() {
     super.onInit();
   }
 
+  void onFlashModeButtonPressed() {
+    if (flashModeControlRowAnimationController.value == 1) {
+      flashModeControlRowAnimationController.reverse();
+    } else {
+      flashModeControlRowAnimationController.forward();
+      exposureModeControlRowAnimationController.reverse();
+    }
+  }
+
+  void onExposureModeButtonPressed() {
+    if (exposureModeControlRowAnimationController.value == 1) {
+      exposureModeControlRowAnimationController.reverse();
+    } else {
+      exposureModeControlRowAnimationController.forward();
+      flashModeControlRowAnimationController.reverse();
+      // _focusModeControlRowAnimationController.reverse();
+    }
+  }
+
+  Future<void> setFlashMode(FlashMode mode) async {
+    if (controller == null) {
+      return;
+    }
+    try {
+      await controller!.setFlashMode(mode);
+    } on CameraException catch (e) {
+      print(e);
+      customSnackbar(
+          message: 'Cannot Appicable', snackPosition: SnackPosition.TOP);
+      //rethrow;
+    }
+  }
+
+  Future<void> setFocusMode(FocusMode mode) async {
+    if (controller == null) {
+      return;
+    }
+
+    try {
+      await controller!.setFocusMode(mode);
+    } on CameraException catch (e) {
+      print(e);
+      rethrow;
+    }
+  }
+
   void openVideo() async {}
 
-  void openGallery() async {}
+  void openGallery() async {
+    Get.to(SavedGallary());
+  }
 
-  void openScreenShot() {}
+  void openScreenShot() {
+    Get.to(CatDogRecognization());
+  }
+
   void openLongScreenShot() {}
   void openPhotoEditing() {}
   void openVideoEditing() {}
   void openScreenReorder() {}
 
+  ///Erro Log fro an message
+  void logError(String code, String message) =>
+      print('Error: $code\nError Message: $message');
+
   @override
   void onReady() {
     super.onReady();
-  }
-
-  GlobalKey _globalKey = GlobalKey();
-  void uploadImage(path) async {
-    RenderRepaintBoundary boundary =
-        _globalKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
-    ui.Image image = path;
-    ByteData? byteData =
-        await (image.toByteData(format: ui.ImageByteFormat.png));
-    if (byteData != null) {
-      final result =
-          await ImageGallerySaver.saveImage(byteData.buffer.asUint8List());
-
-      print(result);
-    }
   }
 
   /// Returns a suitable camera icon for [direction].
